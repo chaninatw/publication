@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" data-secret="">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Research Publication Portal</title>
+<style>
+  :root{
+    --bg:#0b0f14; --card:#121821; --muted:#9fb2c8; --accent:#37e3aa; --warn:#ff7a7a;
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:#e9f2fb;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;min-height:100dvh;display:grid;place-items:center}
+  .wrap{width:min(920px,92vw);padding:24px}
+  .card{background:var(--card);border:1px solid #1f2a38;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid #1f2a38}
+  header h1{font-size:1.05rem;margin:0;letter-spacing:.4px;font-weight:600}
+  .hint{font-size:.85rem;color:var(--muted)}
+  main{padding:22px;display:grid;gap:18px}
+  input[type="password"], input[type="file"]{
+    width:100%;padding:14px 16px;border-radius:12px;border:1px solid #243043;background:#0f141c;color:#dfeaf7;
+    outline:none;transition:border-color .2s ease;
+  }
+  input[type="password"]:focus{border-color:#35507a}
+  .row{display:grid;gap:12px}
+  .btn{
+    display:inline-flex;gap:.6rem;align-items:center;justify-content:center;
+    padding:12px 16px;border-radius:12px;border:1px solid #2a3a51;background:#17202c;color:#e9f2fb;
+    cursor:pointer;font-weight:600;letter-spacing:.2px;transition:transform .02s ease,background .2s ease,border-color .2s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,#2a7bff,#1b5bdc);border-color:#1e52c1}
+  .btn.success{background:linear-gradient(180deg,#3ce9b9,#16c090);border-color:#18a97f;color:#07221b}
+  .note{font-size:.9rem;color:var(--muted)}
+  .err{color:var(--warn);font-weight:600}
+  .ok{color:var(--accent);font-weight:600}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  .published-wrap{
+    position:relative;overflow:hidden;border-radius:18px;min-height:60vh;background:#000;
+    background-image:url('https://raw.githubusercontent.com/chaninatw/publication/main/butanal_bg.png');
+    background-size:cover;background-position:center;
+  }
+  .overlay{
+    position:absolute;inset:0;background:linear-gradient(0deg,rgba(4,6,12,.70),rgba(4,6,12,.55) 30%,rgba(4,6,12,.25));
+  }
+  .badge{
+    position:absolute;inset:auto 0 0 0;margin:auto;bottom:10%;
+    width:min(92%,1000px);text-align:center;
+  }
+  .badge h2{
+    margin:0 auto;
+    font-size:clamp(40px,8vw,120px);
+    line-height:1;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    -webkit-text-stroke:2px rgba(0,0,0,.35);
+    text-shadow:0 2px 0 rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.55);
+  }
+  .badge .stamp{
+    display:inline-block;padding:.45em .8em;border:3px solid #15d39a;border-radius:10px;
+    transform:rotate(-4deg);
+    box-shadow:0 8px 28px rgba(0,0,0,.45), inset 0 0 25px rgba(21,211,154,.18);
+    background:rgba(5,25,22,.55);backdrop-filter:blur(2px);
+    font-weight:900;letter-spacing:.18em;color:#b9ffe8;
+  }
+
+  .center{display:grid;place-items:center;text-align:center}
+  .mt8{margin-top:8px}.mt12{margin-top:12px}.mt20{margin-top:20px}
+  .grid2{display:grid;grid-template-columns:1fr auto;gap:10px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <header>
+        <h1>Research Publication Interface</h1>
+        <div class="hint" id="statusHint">Access locked</div>
+      </header>
+
+      <!-- VIEW 1: PASSWORD -->
+      <main class="view active" id="view-gate" aria-labelledby="gate-title">
+        <div class="row">
+          <label for="pw"><strong id="gate-title">Enter Access Password</strong></label>
+          <input id="pw" type="password" inputmode="numeric" placeholder="••••••" autocomplete="current-password" />
+          <div class="grid2">
+            <div class="note">Password or access code required.</div>
+            <button class="btn primary" id="btn-enter">Unlock</button>
+          </div>
+          <div class="mt8 err" id="pwErr" style="display:none;">Incorrect password. Try again.</div>
+        </div>
+        <div class="note mt12">Tip: You can also append <code>?code=YOURCODE</code> to the URL, or set <code>&lt;body data-secret="YOURCODE"&gt;</code>.</div>
+      </main>
+
+      <!-- VIEW 2: UPLOAD -->
+      <main class="view" id="view-upload" aria-labelledby="upload-title">
+        <div class="row">
+          <label for="pdf" id="upload-title"><strong>Upload Your PDF</strong></label>
+          <input id="pdf" type="file" accept="application/pdf" />
+          <div class="note">Please upload a PDF. Exact filename to publish: <code>butyraldehyde_synthesis.pdf</code></div>
+          <div class="grid2">
+            <div class="note" id="fileMsg">No file selected.</div>
+            <button class="btn" id="btn-submit" disabled>Submit</button>
+          </div>
+          <div class="mt8 err" id="upErr" style="display:none;"></div>
+          <div class="mt8 ok" id="upOk" style="display:none;"></div>
+        </div>
+      </main>
+
+      <!-- VIEW 3: PUBLISHED -->
+      <main class="view" id="view-published" aria-live="polite">
+        <div class="published-wrap">
+          <div class="overlay"></div>
+          <div class="badge">
+            <h2><span class="stamp">PUBLISHED</span></h2>
+          </div>
+        </div>
+        <div class="center mt20">
+          <button class="btn success" id="btn-again">Upload another</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---- Configuration ----
+  // Default password; can be overridden by URL (?code=XXXXX) or <body data-secret="...">
+  const DEFAULT_PASSWORD = "102568";
+
+  // Background image for the published screen
+  const PUBLISHED_BG_URL = "https://raw.githubusercontent.com/chaninatw/publication/main/butanal_bg.png";
+
+  // Target filename to trigger the PUBLISHED screen
+  const TARGET_FILENAME = "butyraldehyde_synthesis.pdf";
+
+  // ---- Helpers ----
+  const qs = (sel, el=document) => el.querySelector(sel);
+  const show = (el) => el.style.display = "";
+  const hide = (el) => el.style.display = "none";
+  const setActiveView = (id) => {
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    qs("#" + id).classList.add("active");
+  };
+  const getQueryParam = (name) => new URLSearchParams(location.search).get(name);
+
+  // Compute secret
+  let secret = DEFAULT_PASSWORD;
+  const urlCode = getQueryParam("code");
+  if (urlCode && urlCode.trim()) secret = urlCode.trim();
+  const bodySecret = document.body.getAttribute("data-secret");
+  if (bodySecret && bodySecret.trim()) secret = bodySecret.trim();
+
+  // Elements
+  const statusHint = qs("#statusHint");
+  const pwInput = qs("#pw");
+  const btnEnter = qs("#btn-enter");
+  const pwErr = qs("#pwErr");
+
+  const fileInput = qs("#pdf");
+  const fileMsg = qs("#fileMsg");
+  const btnSubmit = qs("#btn-submit");
+  const upErr = qs("#upErr");
+  const upOk = qs("#upOk");
+
+  const publishedWrap = qs(".published-wrap");
+  const btnAgain = qs("#btn-again");
+
+  // Set background image explicitly (in case CSS is cached)
+  publishedWrap.style.backgroundImage = `url("${PUBLISHED_BG_URL}")`;
+
+  // Gate events
+  function attemptUnlock(){
+    hide(pwErr);
+    const val = (pwInput.value || "").trim();
+    if (val === secret){
+      statusHint.textContent = "Access granted";
+      setActiveView("view-upload");
+      fileInput.focus();
+    } else {
+      statusHint.textContent = "Access locked";
+      show(pwErr);
+    }
+  }
+  btnEnter.addEventListener("click", attemptUnlock);
+  pwInput.addEventListener("keydown", (e) => { if(e.key === "Enter") attemptUnlock(); });
+
+  // Upload events
+  fileInput.addEventListener("change", () => {
+    hide(upErr); hide(upOk);
+    const f = fileInput.files && fileInput.files[0];
+    if (!f){
+      fileMsg.textContent = "No file selected.";
+      btnSubmit.disabled = true;
+      return;
+    }
+    fileMsg.textContent = `Selected: ${f.name}`;
+    btnSubmit.disabled = false;
+  });
+
+  btnSubmit.addEventListener("click", () => {
+    hide(upErr); hide(upOk);
+    const f = fileInput.files && fileInput.files[0];
+    if (!f){ upErr.textContent = "Please choose a PDF first."; show(upErr); return; }
+    if (f.type !== "application/pdf"){
+      upErr.textContent = "Only PDF files are accepted."; show(upErr); return;
+    }
+    if (f.name === TARGET_FILENAME){
+      setActiveView("view-published");
+      statusHint.textContent = "Published";
+    } else {
+      upOk.textContent = `File received: "${f.name}". (Filename did not match "${TARGET_FILENAME}")`;
+      show(upOk);
+    }
+  });
+
+  // Reset flow
+  btnAgain.addEventListener("click", () => {
+    fileInput.value = "";
+    fileMsg.textContent = "No file selected.";
+    btnSubmit.disabled = true;
+    hide(upErr); hide(upOk);
+    setActiveView("view-upload");
+  });
+
+  // Autofocus on load
+  setTimeout(()=>pwInput.focus(), 50);
+})();
+</script>
+</body>
+</html>
